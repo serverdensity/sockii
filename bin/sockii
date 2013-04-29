@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Shell wrapper for run-sockii.js script, uses the environment Node.js,
+# and allows you to pass options to Node before it runs CoffeeScript
+
+BASE_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+NODE_OPTS=
+while getopts "n:" 2>/dev/null OPTION
+do
+  case $OPTION in
+    n)
+      NODE_OPTS=$OPTARG
+      ;;
+    *)
+  esac
+done
+
+/usr/bin/env node $NODE_OPTS $BASE_DIR/../src/run-sockii.js $*

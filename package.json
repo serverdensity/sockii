@@ -20,22 +20,22 @@
    "dependencies": {
        "socket.io": "0.9.13",
        "ws": "0.4.25",
-       "coffee-script": "1.3.*",
-       "lodash": "0.4.*",
-       "http-proxy": "0.10.*",
-       "request": "2.9.*",
-       "mongodb": "1.2.*",
-       "socket.io-client": "0.9.*",
+       "coffee-script": "1.3.3",
+       "lodash": "1.2.0",
+       "http-proxy": "0.10.2",
+       "request": "2.20.0",
+       "mongodb": "1.3.0",
+       "socket.io-client": "0.9.11",
        "options": "*",
-       "winston": "0.6.*",
-       "longjohn": "0.0.*",
+       "winston": "0.7.1",
+       "longjohn": "0.2.0",
        "async": "0.1.22",
-       "optimist": "0.3.*",
-       "node-uuid": "1.4.*"
+       "optimist": "0.4.0",
+       "node-uuid": "1.4.0"
    },
    "devDependencies": {
-       "vows": "0.5.*",
-       "nock": "0.13.*"
+       "vows": "0.7.0",
+       "nock": "0.17.5"
    },
    "scripts": {
        "test": "vows tests/*-test.coffee --spec",

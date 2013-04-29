@@ -214,7 +214,7 @@ class Sockii extends EventEmitter
                 'Content-Type': 'text/html'
             return response.end ''
 
-        if @config.checkXRequestedWith and \
+        if @config.checkXRequestedWith \
                 and request.headers['x-requested-with']?.toLowerCase() isnt 'xmlhttprequest'
             # Prevent CSRF attacks by only allowing AJAX requests
             response.writeHead 405,

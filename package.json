@@ -7,9 +7,16 @@
        "email": "hello@serverdensity.com",
        "web": "http://www.serverdensity.com/"
    }, 
+   "maintainers": [
+       {
+           "name": "Wes Mason",
+           "email": "wes@serverdensity.com",
+           "web": "http://git.io/1v"
+       }
+   ],
    "repository": {
        "type": "git",
-       "url": "git@github.com:serverdensity/sockii.git" 
+       "url": "https://github.com/serverdensity/sockii.git" 
    }, 
    "engines": {
        "node": ">= 0.8"
@@ -42,7 +49,8 @@
        "xunit-tests": "echo > tests.log && TESTOUTPUT=`vows tests/*-test.coffee --xunit` && cat ./tests.log && echo && mkdir -p ./test-reports && echo $TESTOUTPUT > ./test-reports/socky.xml"
    },
    "directories": {
-       "lib": "src"
+       "lib": "src",
+       "test": "tests"
    },
    "main": "./src/run-sockii",
    "licenses": [
@@ -50,5 +58,7 @@
             "type": "BSD-2-Clause",
             "url": "http://opensource.org/licenses/BSD-2-Clause"
         }
-   ]
+   ],
+   "bugs": "https://github.com/serverdensity/sockii/issues",
+   "homepage": "https://github.com/serverdensity/sockii"
 }

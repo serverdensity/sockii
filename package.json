@@ -44,5 +44,11 @@
    "directories": {
        "lib": "src"
    },
-   "main": "./src/run-sockii"
+   "main": "./src/run-sockii",
+   "licenses": [
+        {
+            "type": "BSD-2-Clause",
+            "url": "http://opensource.org/licenses/BSD-2-Clause"
+        }
+   ]
 }

@@ -2,7 +2,7 @@
 
 HTTP and WebSocket aggregation thinlayer, which acts as a proxy between a frontend UI and multiple backend HTTP services.
 
-See this [blog post](http://blog.serverdensity.com/introducing-socky-our-http-and-websocket-aggregator) for more info.
+See this [blog post](http://blog.serverdensity.com/introducing-sockii-http-and-websocket-aggregator/) for more info.
 
 ## Installing
 

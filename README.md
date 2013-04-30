@@ -21,3 +21,21 @@ npm install
 ```
 
 ## Usage
+
+The documentation is a work in progress, but for now you can look at the [example config](config/example.json) for pointers on how to configure the app.
+
+Basic usage, if system installed:
+
+```bash
+cd $MYAPPDIR
+sockii --help
+sockii -c ./myapp.json
+```
+
+If using a local build:
+
+```bash
+cd sockii
+./bin/sockii --help
+./bin/sockii -c $MYAPPDIR/myapp.json
+```

@@ -1,0 +1,39 @@
+{
+    "listen": {
+        "host": "127.0.0.1",
+        "port": 8089
+    },
+    "timeout": 90000,
+    "plugins": [
+        "mongosessions"
+    ],
+    "aclAllowBaseDomain": "myapp.dev",
+    "checkXRequestedWith": false,
+    "basePath": "/svc",
+    "httpProxy": {
+        "silent": false,
+	"pathnameOnly": true,
+        "router": {
+            "/svc/alerts": "alerts.myapp.dev",
+            "/svc/users": "users.myapp.dev"
+        },
+        "enable": {
+            "xforward": true
+        },
+        "changeOrigin": true
+    },
+    "wsMaps": {
+        "notifications": "ws://notifications.myapp.dev:8090/websockets/"
+    },
+    "logResets": false,
+    "socket.io": {
+        "transports": ["htmlfile", "jsonp-polling", "xhr-polling"],
+        "polling duration": 10,
+        "browser client": false,
+        "match origin protocol": true,
+	"resource": "/svc/socket.io"
+    },
+    "mongosessions": {
+	"required": true
+    }
+}

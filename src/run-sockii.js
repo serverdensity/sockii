@@ -7,7 +7,7 @@ var Sockii = require('./sockii');
 var optimist = require('optimist');
 var _ = require('lodash');
 
-argv = optimist.usage('WebSocket and HTTP aggregator/proxy\nUsage: $0\n\nAny argument passed that aren\'t defined below will override options from the config file.')
+argv = optimist.usage('WebSocket and HTTP aggregator/proxy\nUsage: $0\n\nAny arguments passed that aren\'t defined below will override options from the config file.')
         .alias('c', 'config')
         .default('c', './config/development.json')
         .describe('c', 'Config file path')

@@ -1,0 +1,42 @@
+{
+    "listen": {
+        "host": "127.0.0.1",
+        "port": 8079
+    },
+    "timeout": 90000,
+    "plugins": [
+        "mongosessions"
+    ],
+	"basePath": "/svc",
+    "httpProxy": {
+        "silent": false,
+	"pathnameOnly": true,
+        "router": {
+            "/svc/cloud": "cloud.honshuu.dev:8088",
+            "/svc/inventory": "inventory.honshuu.dev",
+            "/svc/users": "users.honshuu.dev"
+        },
+        "enable": {
+            "xforward": true
+        },
+        "changeOrigin": true
+    },
+    "wsMaps": {
+        "wstest": "ws://localhost:8095/"
+    },
+    "logResets": true,
+    "logger": {
+        "transports": [
+            {
+                "transport": "File",
+                "filename": "./tests.log",
+                "json": false,
+                "maxsize": 1048576,
+                "maxFiles": 1
+            }
+        ]
+    },
+    "mongosessions": {
+	"required": true
+    }
+}

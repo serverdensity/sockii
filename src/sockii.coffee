@@ -98,7 +98,7 @@ class Sockii extends EventEmitter
                 @logger.info "Loading plugin #{ name }"
                 cls = null
                 for path in paths
-                    if path isnt '' and path[path.length-1] isnt '/'
+                    if path and path[path.length-1] isnt '/'
                         path += '/'
                     try
                         cls = require fspath.normalize("#{ path }#{ name }")

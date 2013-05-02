@@ -1,6 +1,6 @@
 {
    "name": "sockii",
-   "version": "0.9.14",
+   "version": "0.9.15",
    "description": "HTTP and WebSocket aggregation thinlayer",
    "author": {
        "name": "Server Density",

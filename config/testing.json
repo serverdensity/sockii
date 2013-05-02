@@ -12,9 +12,9 @@
         "silent": false,
 	"pathnameOnly": true,
         "router": {
-            "/svc/cloud": "cloud.honshuu.dev:8088",
-            "/svc/inventory": "inventory.honshuu.dev",
-            "/svc/users": "users.honshuu.dev"
+            "/svc/monkeys": "monkeys.sockii.dev:8888",
+            "/svc/inventory": "inventory.sockii.dev",
+            "/svc/users": "users.sockii.dev"
         },
         "enable": {
             "xforward": true

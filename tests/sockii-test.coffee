@@ -51,7 +51,7 @@ vows.describe('HTTP Requests').addBatch(
         "HTTP":
             "inventory -":
                 topic: ->
-                    inventory = nock('http://inventory.honshuu.dev')
+                    inventory = nock('http://inventory.sockii.dev')
                         .get('/?accountId=testaccount&userId=testuser')
                         .reply(200, 'OK')
 
@@ -75,7 +75,7 @@ vows.describe('HTTP Requests').addBatch(
                         firstName: 'foo'
                         lastName: 'bar'
 
-                    users = nock('http://users.honshuu.dev')
+                    users = nock('http://users.sockii.dev')
                         .get('/accounts/blah?accountId=testaccount&userId=testuser')
                         .reply(500)
                         .get('/accounts/1234567890/?accountId=testaccount&userId=testuser')
@@ -173,12 +173,12 @@ vows.describe('HTTP Requests').addBatch(
                         apiCredentials: 'test'
                         accountId: '1234567890'
 
-                    cloud = nock('http://cloud.honshuu.dev:8088')
+                    monkeys = nock('http://monkeys.sockii.dev:8888')
                         .post('/nodes/?accountId=testaccount&userId=testuser', qs.stringify(data).toString('utf8'))
                         .reply(200, 'OK')
 
                     httpRequest.post
-                        url: 'http://127.0.0.1:8079/svc/cloud/nodes/'
+                        url: 'http://127.0.0.1:8079/svc/monkeys/nodes/'
                         jar: cookies
                         form: data
                         headers: headers
@@ -186,7 +186,7 @@ vows.describe('HTTP Requests').addBatch(
 
                     return
 
-                "POST /cloud/nodes/ will proxy to /nodes/ on port :8079":
+                "POST /monkeys/nodes/ will proxy to /nodes/ on port :8888":
                     (error, response, body) ->
                         assert.equal body, 'OK'
 
@@ -219,7 +219,7 @@ vows.describe('HTTP Requests').addBatch(
                         client.on 'message', (data) =>
                             callback data
 
-                "$sockiiEndpoint proxies message to cloud and returns data back to client":
+                "$sockiiEndpoint proxies message to monkeys websocket and returns data back to client":
                     (data) ->
                         if data._test
                             assert.equal data.foo, "bar"

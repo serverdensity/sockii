@@ -17,7 +17,7 @@ cookies = httpRequest.jar()
 cookies.setCookie(httpRequest.cookie('session=testsession'), 'http://127.0.0.1:8079', ->)
 
 badCookies = httpRequest.jar()
-badCookies.add httpRequest.cookie('session=badtestsession')
+badCookies.setCookie(httpRequest.cookie('session=badtestsession'), 'http://127.0.0.1:8079', ->)
 
 headers =
     'X-Requested-With': 'XMLHTTPRequest'

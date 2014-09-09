@@ -167,7 +167,7 @@ vows.describe('HTTP Requests').addBatch(
                         (error, response, body) ->
                             assert.equal response.statusCode, 405
 
-            "cloud -":
+            "monkeys -":
                 topic: ->
                     data =
                         apiCredentials: 'test'

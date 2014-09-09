@@ -16,8 +16,8 @@
         "changeOrigin": true
     },
     "routes": {
-        "/svc/alerts": "alerts.myapp.dev",
-        "/svc/users": "users.myapp.dev"
+        "/svc/alerts": "http://alerts.myapp.dev",
+        "/svc/users": "http://users.myapp.dev"
     },
     "wsMaps": {
         "notifications": "ws://notifications.myapp.dev:8090/websockets/"

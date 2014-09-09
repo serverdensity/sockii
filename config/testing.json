@@ -14,9 +14,9 @@
         "changeOrigin": true
     },
     "routes": {
-        "/svc/monkeys": "monkeys.sockii.dev:8888",
-        "/svc/inventory": "inventory.sockii.dev",
-        "/svc/users": "users.sockii.dev"
+        "/svc/monkeys": "http://monkeys.sockii.dev:8888",
+        "/svc/inventory": "http://inventory.sockii.dev",
+        "/svc/users": "http://users.sockii.dev"
     },
     "wsMaps": {
         "wstest": "ws://localhost:8095/"

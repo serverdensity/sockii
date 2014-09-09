@@ -14,7 +14,7 @@ mongodb = require 'mongodb'
 config = JSON.parse fs.readFileSync('./config/testing.json')
 
 cookies = httpRequest.jar()
-cookies.add httpRequest.cookie('session=testsession')
+cookies.setCookie(httpRequest.cookie('session=testsession'), 'http://127.0.0.1:8079', ->)
 
 badCookies = httpRequest.jar()
 badCookies.add httpRequest.cookie('session=badtestsession')
@@ -29,7 +29,7 @@ vows.describe('HTTP Requests').addBatch(
 
     "Sockii":
         topic: ->
-            mongo = new mongodb.Db('sessions', new mongodb.Server('127.0.0.1', mongodb.Connection.DEFAULT_PORT, {auto_reconnect: yes}), {native_parser: on, safe: yes})
+            mongo = new mongodb.Db('sessions', new mongodb.Server('127.0.0.1', mongodb.Connection.DEFAULT_PORT, {auto_reconnect: yes}), {safe: yes})
             mongo.open (error, db) =>
                 db.collection 'sessions', (error, collection) =>
                     doc =

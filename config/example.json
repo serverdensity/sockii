@@ -12,28 +12,35 @@
     "basePath": "/svc",
     "httpProxy": {
         "silent": false,
-	"pathnameOnly": true,
-        "router": {
-            "/svc/alerts": "alerts.myapp.dev",
-            "/svc/users": "users.myapp.dev"
-        },
-        "enable": {
-            "xforward": true
-        },
+        "xfwd": true,
         "changeOrigin": true
+    },
+    "routes": {
+        "/svc/alerts": "alerts.myapp.dev",
+        "/svc/users": "users.myapp.dev"
     },
     "wsMaps": {
         "notifications": "ws://notifications.myapp.dev:8090/websockets/"
     },
     "logResets": false,
+    "logger": {
+        "transports": [
+        {
+            "transport": "File",
+            "filename": "./myapp.log",
+            "json": false,
+            "maxsize": 1048576,
+            "maxFiles": 1
+        }
+        ]
+    },
     "socket.io": {
-        "transports": ["htmlfile", "jsonp-polling", "xhr-polling"],
         "polling duration": 10,
         "browser client": false,
         "match origin protocol": true,
-	"resource": "/svc/socket.io"
+        "path": "/svc/socket.io"
     },
     "mongosessions": {
-	"required": true
+        "required": true
     }
 }

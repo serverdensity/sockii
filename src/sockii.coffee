@@ -3,8 +3,9 @@
 # Better stack traces
 require 'longjohn'
 
+os = require 'os'
 EventEmitter = require('events').EventEmitter
-socketio = require 'socket.io'
+io = require 'socket.io'
 url = require 'url'
 _ = require 'lodash'
 httpProxy = require 'http-proxy'
@@ -16,6 +17,7 @@ fspath = require 'path'
 url = require 'url'
 uuid = require 'node-uuid'
 exceptions = require './exceptions'
+fs = require('fs');
 
 OPEN_WS_STATES = [WebSocket.CONNECTING, WebSocket.OPEN]
 
@@ -28,7 +30,12 @@ class Sockii extends EventEmitter
     sockets: {}
 
     constructor: (@config, @configPath) ->
-        @app = require('http').createServer()
+        @app    = http.createServer()
+        @server = @app.listen(@config.listen.port, @config.listen.host)
+
+        # Send TCP packets without Nagle buffering
+        @server.on 'connection', (socket) ->
+            socket.setNoDelay(true)
 
         @config.logger ?= {}
         @config.logger.prefix ?= '[sockii]'
@@ -41,6 +48,9 @@ class Sockii extends EventEmitter
 
         transports = []
         for transportOptions in @config.logger.transports
+            if transportOptions.module?
+                require(transportOptions.module)[transportOptions.transport]
+
             if '/' in transportOptions.transport
                 cls = require transportOptions.transport
             else
@@ -52,13 +62,29 @@ class Sockii extends EventEmitter
         @_logger = new winston.Logger
             transports: transports
 
-        # We wrap the logger here so we can add a custom prefix
+        # We wrap the logger here so we can add a custom prefix and hostname info
+        hostname = os.hostname()
+        @log = (level, msg, data) =>
+            if typeof(data) is 'undefined'
+                data = {}
+            if typeof(data) isnt 'object'
+                data = data: data
+
+            data.syslog ?= {}
+            data.syslog.host = hostname
+            @_logger[level]("#{ @config.logger.prefix } #{ msg }", data)
+
         @logger =
-            debug: (msg, data) => @_logger.debug "#{ @config.logger.prefix } #{ msg }", data
-            info: (msg, data) => @_logger.info "#{ @config.logger.prefix } #{ msg }", data
-            warning: (msg, data) => @_logger.warning "#{ @config.logger.prefix } #{ msg }", data
-            warn: (msg, data) => @_logger.warn "#{ @config.logger.prefix } #{ msg }", data
-            error: (msg, data) => @_logger.error "#{ @config.logger.prefix } #{ msg }", data
+            debug: (msg, data) =>
+                @log 'debug', msg, data
+            info: (msg, data) =>
+                @log 'info', msg, data
+            warn: (msg, data) =>
+                @log 'warn', msg, data
+            warning: (msg, data) =>
+                @log 'warn', msg, data
+            error: (msg, data) =>
+                @log 'error', msg, data
 
         # Default for binding
         @config.listen ?= {}
@@ -81,10 +107,10 @@ class Sockii extends EventEmitter
         # Base path to strip from ignored paths
         @config.basePath ?= ''
 
-        @proxy = new httpProxy.RoutingProxy @config.httpProxy
+        @proxy = new httpProxy.createProxy @config.httpProxy
 
-        @logger.debug 'Config:', @config
-    
+        @logger.debug 'Config:', config: @config
+
     loadPlugins: (plugins) ->
         if plugins
             for name in plugins
@@ -98,7 +124,7 @@ class Sockii extends EventEmitter
                 @logger.info "Loading plugin #{ name }"
                 cls = null
                 for path in paths
-                    if path and path[path.length-1] isnt '/'
+                    if path isnt '' and path[path.length-1] isnt '/'
                         path += '/'
                     try
                         cls = require fspath.normalize("#{ path }#{ name }")
@@ -110,14 +136,13 @@ class Sockii extends EventEmitter
                 if cls isnt null
                     @plugins[name] = new cls @, @config[name] or {}
                 else
-                    @logger.error "Unable to load plugin #{ name } with plugin search paths", paths
+                    @logger.error "Unable to load plugin #{ name } with plugin search paths", paths: paths
 
     loadPlugin: (plugin) ->
         @loadPlugins [plugin]
 
     listen: ->
         @logger.info "Listening on #{ @config.listen.host }:#{ @config.listen.port }"
-        @server = @app.listen @config.listen.port, @config.listen.host
 
         sioOptions =
             origins: '*:*'
@@ -126,23 +151,23 @@ class Sockii extends EventEmitter
         if @config['socket.io']?
             sioOptions = _.extend sioOptions, @config['socket.io']
 
-        @logger.info "Setting socket.io options:", sioOptions
-        @io = socketio.listen @server, sioOptions
+        @logger.info "Setting socket.io options:", sioOptions: sioOptions
 
-        # Send TCP packets without Nagle buffering
-        @io.server._handle?.setNoDelay? yes
+        @io = io(@server, sioOptions)
 
-        @loadPlugins @config.plugins
+        @loadPlugins(@config.plugins)
+
         @bindEvents()
+
+        @server.listen(@config.listen.port, @config.listen.host)
 
     bindEvents: ->
         process.on 'SIGHUP', @sighupHandler
         process.on 'uncaughtException', @errorHandler
 
-        @server.on 'request', @httpRequestHandler
         @io.on 'connection', @websocketHandler
 
-        @proxy.on 'proxyError', @handleProxyError
+        @server.on 'request', @httpRequestHandler
 
         # Plugins
         httpFuncs = ["request", "get", "post", "put", "delete"]
@@ -172,15 +197,41 @@ class Sockii extends EventEmitter
         }
 
     sighupHandler: =>
+        @logger.debug 'Caught HUP signal'
+
         # Ensure log file pointers are reset on SIGHUP
-        @_logger.transports?.file?._createStream()
+        if @_logger.transports?.file?
+            fileTransport = @_logger.transports.file
+            fullname = fspath.join(fileTransport.dirname, fileTransport._getFile(false))
+
+            fs.stat fullname, (err) =>
+                if err and err.code is 'ENOENT'
+                    if fileTransport._stream
+                        fileTransport._stream.end()
+                        fileTransport._stream.destroySoon()
+
+                    stream = fs.createWriteStream fullname, fileTransport.options
+                    stream.setMaxListeners Infinity
+
+                    fileTransport._size = 0
+                    fileTransport._stream = stream
+
+                    fileTransport.once 'flush', ->
+                        fileTransport.opening = no
+                        fileTransport.emit 'open', fullname
+
+                    fileTransport.flush()
+
+                    @logger.info 'File transport reopened due to HUP signal'
 
     errorHandler: (error, request, response) =>
         # Generic error handler
 
         # Don't log socket hang up errors unless explicitely enabled
         if error.code isnt 'ECONNRESET' or @config.logResets
-            @logger.error error, error.stack
+            @logger.error error,
+                stack: error.stack
+                url: request?.url
 
     handleRequestError: (error, request, response) =>
 
@@ -201,23 +252,11 @@ class Sockii extends EventEmitter
             response.write 'Internal Server Error'
 
         response.end()
-        @errorHandler(error)
+        @errorHandler(error, request)
 
     httpRequestHandler: (request, response) =>
-        # Send TCP packets without Nagle buffering
-        request.connection?.setNoDelay? yes
-        response.connection?.setNoDelay? yes
-
         if url.parse(request.url).pathname is '/'
             response.writeHead 404,
-                'Content-Length': 0
-                'Content-Type': 'text/html'
-            return response.end ''
-
-        if @config.checkXRequestedWith \
-                and request.headers['x-requested-with']?.toLowerCase() isnt 'xmlhttprequest'
-            # Prevent CSRF attacks by only allowing AJAX requests
-            response.writeHead 405,
                 'Content-Length': 0
                 'Content-Type': 'text/html'
             return response.end ''
@@ -236,7 +275,7 @@ class Sockii extends EventEmitter
             # Whitelist all the HTTP methods we use
             response.setHeader 'Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, HEAD, OPTIONS'
             # Whitelist pagination headers
-            response.setHeader 'Access-Control-Expose-Headers', 'X-Total-Number, X-First-Page, X-Previous-Page, X-Next-Page, X-Last-Page, X-Barium'
+            response.setHeader 'Access-Control-Expose-Headers', 'X-Total-Number, X-First-Page, X-Previous-Page, X-Next-Page, X-Last-Page, X-Barium, X-Total-Filter, X-Total-Open, X-Total-Closed, X-User-Open, X-User-Closed, X-Total-Error, X-Snapshot-Current, X-Snapshot-Next, X-Snapshot-Previous'
 
             if request.method is 'OPTIONS'
                 # For pre-flight requests, if they're asking about valid headers,
@@ -253,14 +292,11 @@ class Sockii extends EventEmitter
         # Ignore favicon and socket.io requests
         checkUri = request.url
         if request.url.slice(0, (11 + @config.basePath.length)) in ["#{@config.basePath}/favicon.ic", "#{@config.basePath}/socket.io/"]
-            console.log request.url
+            console.log 'Ignoring favicon/socketIO request ', request.url
             return
 
         # Ignore HEAD requests
         if request.method is 'HEAD' then return
-
-        # Buffer the request so we don't lose events or data during async ops
-        buffer = httpProxy.buffer request
 
         # Address mappers
         request.url = @httpAddressMap request.url
@@ -282,7 +318,7 @@ class Sockii extends EventEmitter
             if @httpHandlers.length is 0 or called is @httpHandlers.length
                 timeout = setTimeout =>
                     if response.writable and not response.finished
-                        @logger.error 'Timeout called, go to the naughty step', response
+                        @logger.error 'Timeout called, go to the naughty step', requestUrl: request.url
                         response.statusCode = 500
                         response.write '{"error":"upstream_timeout"}'
                         response.end()
@@ -292,7 +328,47 @@ class Sockii extends EventEmitter
                 response.on 'close', clear
 
                 @logger.info "Proxying #{ request.url }"
-                @proxy.proxyRequest request, response, buffer: buffer
+
+                # http-proxy no longer does path based routing, so we have
+                # have to do it ourselves
+                target = null
+                for path, host of @config.routes
+                    if request.url.substring(0, path.length) is path
+                        target = host
+
+                        if target.indexOf('/') isnt -1
+                            # target expects a protocol, so we'll strip it out for now
+                            # and add it back in later, makes subsequent slicing and dicing easier
+                            if target.indexOf('http://') is 0
+                                is_http = yes
+                                target = target.slice(7)
+                            else
+                                is_http = no
+                                target = target.slice(8)
+
+                            # Just drops any extra paths from the target, we don't seem to use them
+                            slashIndex = target.indexOf('/')
+                            target = target.slice(0, (if slashIndex isnt -1 then slashIndex else target.length))
+
+                            request.headers['X-Forwarded-For'] = request.headers.host
+                            request.headers.host = target
+
+                            # Add the protocol back in
+                            if is_http
+                                target = "http://#{ target }"
+                            else
+                                target = "https://#{ target }"
+
+                        request.url = request.url.slice(path.length)
+                        break
+
+                if target is null
+                    response.writeHead 404,
+                        'Content-Length': 0
+                        'Content-Type': 'text/html'
+                    return response.end ''
+
+                @proxy.web request, response, { target: target }, @handleProxyError
 
         # Plugin request handlers
         if @httpHandlers.length > 0
@@ -370,7 +446,6 @@ class Sockii extends EventEmitter
                     response: JSON.parse body
 
     websocketHandler: (socket) =>
-
         socket.on 'disconnect', =>
             @logger.debug "Socket '#{ socket.id }' disconnected"
             # Clean up any upstream websocket connections
@@ -388,6 +463,7 @@ class Sockii extends EventEmitter
             if data.http then return @dispatchHttpRequest socket, data
 
             called = 0
+
             next = (error, done) =>
                 if error
                     throw error
@@ -406,15 +482,17 @@ class Sockii extends EventEmitter
                     if not @config.wsMaps[endpoint]? then return
 
                     address = @config.wsMaps[endpoint]
+
                     if socket.handshake._appendToSocket?
-                        parsed = url.parse address
-                        parsed.query = socket.handshake._appendToSocket
-                        address = url.format parsed
+                        parsed          = url.parse address
+                        parsed.query    = socket.handshake._appendToSocket
+
+                        address         = url.format parsed
 
                     # Address maps
                     address = @wsAddressMap address
 
-                    @logger.info "Mapping to: #{ address }"
+                    @logger.info "Mapping to #{ address }"
 
                     id = socket.id
 
@@ -474,6 +552,6 @@ class Sockii extends EventEmitter
                 for handler in @socketeers
                     process.nextTick -> handler.socket socket, next
             else
-                next null, yes
+                next(null, yes)
 
 module.exports = Sockii

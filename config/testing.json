@@ -7,19 +7,16 @@
     "plugins": [
         "mongosessions"
     ],
-	"basePath": "/svc",
+    "basePath": "/svc",
     "httpProxy": {
         "silent": false,
-	"pathnameOnly": true,
-        "router": {
-            "/svc/monkeys": "monkeys.sockii.dev:8888",
-            "/svc/inventory": "inventory.sockii.dev",
-            "/svc/users": "users.sockii.dev"
-        },
-        "enable": {
-            "xforward": true
-        },
+        "xfwd": true,
         "changeOrigin": true
+    },
+    "routes": {
+        "/svc/monkeys": "http://monkeys.sockii.dev:8888",
+        "/svc/inventory": "http://inventory.sockii.dev",
+        "/svc/users": "http://users.sockii.dev"
     },
     "wsMaps": {
         "wstest": "ws://localhost:8095/"
@@ -27,16 +24,16 @@
     "logResets": true,
     "logger": {
         "transports": [
-            {
-                "transport": "File",
-                "filename": "./tests.log",
-                "json": false,
-                "maxsize": 1048576,
-                "maxFiles": 1
-            }
+        {
+            "transport": "File",
+            "filename": "./tests.log",
+            "json": false,
+            "maxsize": 1048576,
+            "maxFiles": 1
+        }
         ]
     },
     "mongosessions": {
-	"required": true
+        "required": true
     }
 }

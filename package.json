@@ -1,52 +1,46 @@
 {
    "name": "sockii",
-   "version": "0.9.15",
-   "description": "HTTP and WebSocket aggregation thinlayer",
+   "version": "0.10.0",
+   "description": "HTTP and WebSocket aggregation thin layer",
    "author": {
        "name": "Server Density",
        "email": "hello@serverdensity.com",
        "web": "http://www.serverdensity.com/"
-   }, 
-   "maintainers": [
-       {
-           "name": "Wes Mason",
-           "email": "wes@serverdensity.com",
-           "web": "http://git.io/1v"
-       }
-   ],
+   },
    "repository": {
        "type": "git",
-       "url": "https://github.com/serverdensity/sockii.git" 
-   }, 
+       "url": "https://github.com/serverdensity/sockii.git"
+   },
    "engines": {
-       "node": ">= 0.8"
+       "node": ">= 0.10"
    },
    "bin": {
        "sockii": "./bin/sockii"
    },
    "dependencies": {
-       "socket.io": "0.9.13",
-       "ws": "0.4.25",
-       "coffee-script": "1.3.3",
-       "lodash": "1.2.0",
-       "http-proxy": "0.10.2",
-       "request": "2.20.0",
-       "socket.io-client": "0.9.11",
-       "options": "*",
-       "winston": "0.7.1",
-       "longjohn": "0.2.0",
-       "async": "0.1.22",
-       "optimist": "0.4.0",
-       "node-uuid": "1.4.0"
+       "socket.io": "1.0.6",
+       "ws": "0.4.32",
+       "coffee-script": "1.6.3",
+       "lodash": "2.4.1",
+       "http-proxy": "1.1.4",
+       "request": "2.40.0",
+       "socket.io-client": "1.0.6",
+       "options": "0.0.5",
+       "winston": "0.7.3",
+       "longjohn": "0.2.4",
+       "async": "0.9.0",
+       "optimist": "0.6.1",
+       "node-uuid": "1.4.1",
+       "forever-monitor": "1.3.0"
    },
    "devDependencies": {
        "vows": "0.7.0",
-       "nock": "0.17.5",
-       "mongodb": "1.3.0"
+       "nock": "0.34.1",
+       "mongodb": "1.4.9"
    },
    "scripts": {
        "test": "vows tests/*-test.coffee --spec",
-       "xunit-tests": "echo > tests.log && TESTOUTPUT=`vows tests/*-test.coffee --xunit` && cat ./tests.log && echo && mkdir -p ./test-reports && echo $TESTOUTPUT > ./test-reports/socky.xml"
+       "xunit-tests": "echo > tests.log && TESTOUTPUT=`vows tests/*-test.coffee --xunit` && cat ./tests.log && echo && mkdir -p ./test-reports && echo $TESTOUTPUT > ./test-reports/sockii.xml"
    },
    "directories": {
        "lib": "src",

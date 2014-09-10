@@ -1,59 +1,41 @@
 // ex: set tabstop=4 shiftwidth=4 expandtab:
 
-var coffee = require('../node_modules/coffee-script/lib/coffee-script/coffee-script.js');
 var fs = require('fs');
-var path = require('path');
-var Sockii = require('./sockii');
-var optimist = require('optimist');
 var _ = require('lodash');
+var config = require('./config.js');
+var forever = require('forever-monitor');
 
-argv = optimist.usage('WebSocket and HTTP aggregator/proxy\nUsage: $0\n\nAny arguments passed that aren\'t defined below will override options from the config file.')
-        .alias('c', 'config')
-        .default('c', './config/development.json')
-        .describe('c', 'Config file path')
-        .alias('h', 'help')
-        .boolean('h')
-        .default('h', false)
-        .describe('h', 'This help')
-        .alias('p', 'pidfile')
-        .default('p', './.sockii.pid')
-        .describe('p', 'PID file path')
-        .argv;
+// Default config for forever-monitor
+var foreverConfig = {
+    max: 3,
+    spinSleepTime: 5000,
+    silent: false,
+    killTree: true
+};
 
-if (argv.h) {
-    optimist.showHelp(console.log);
-    process.exit(0);
-}
+// Allow config to be overridden by config file or command line args
+foreverConfig = _.extend(foreverConfig, config.forever || {});
+foreverConfig.options = process.argv.slice(2);
 
-// Write the PID file for this process
-fs.writeFileSync(argv.p, process.pid);
+var child = new (forever.Monitor)(__dirname + '/init-sockii.js', foreverConfig);
 
-// Always ignore -n, this is used by the bin/sockii wrapper to inject arguments to node.js
-if (argv.n) {
-    delete argv.n;
-}
+child.on('exit', function () {
+    console.error('[sockii-forever] init-sockii.js has exited after ' + foreverConfig.max +' restarts');
+});
 
-var configPath = argv.c;
-configPath = path.resolve(configPath);
+child.on('restart', function() {
+    console.error('[sockii-forever] init-sockii.js child restarted');
+});
 
-var config = JSON.parse(fs.readFileSync(configPath));
+child.on('start', function(childProcess) {
+    process.on('SIGHUP', function () {
+        childProcess.kill('SIGHUP');
+        return false;
+    });
+});
 
-// Remove config file values from argv so we don't merge them with config
-if (argv.c) {
-    delete argv.c;
-}
-if (argv.config) {
-    delete argv.config;
-}
+process.on('uncaughtException', function (err) {
+  console.error('[sockii-forever] caught exception: ' + err);
+});
 
-config = _.extend(config, argv);
-
-var sockii = new Sockii(config, configPath);
-var delayStart = config.delayStart || 0;
-var start = function() { sockii.listen(); };
-
-if (delayStart > 0) {
-    setTimeout(start, delayStart);
-} else {
-    start();
-}
+child.start();
